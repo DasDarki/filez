@@ -14,6 +14,10 @@ import (
 //go:embed icon.png
 var iconPNG []byte
 
+// IconPNG returns the embedded Filez icon (128×128 PNG), used for notifications
+// and desktop/context-menu integration.
+func IconPNG() []byte { return iconPNG }
+
 // Clipboard copies text to the system clipboard, trying the available tools in
 // order: wl-copy (Wayland), xclip, xsel (X11), pbcopy (macOS).
 func Clipboard(text string) error {

@@ -13,6 +13,7 @@ Upload from a minimalist web UI or straight from your terminal, and share a link
 - **Public or private:** open to everyone by default, or gated behind access keys managed in a Basic-Auth admin area.
 - **CLI (`filez`)** for scripted uploads and host management, plus **`filezui`**, an animated interactive console UI.
 - **Auto-upload folders:** watch a directory (e.g. your screenshots) — new files upload automatically, the link is copied to your clipboard and a notification pops up.
+- **KDE integration:** a "Share with Filez" right-click menu in Dolphin (Plasma / Wayland).
 
 ## Architecture
 
@@ -129,6 +130,20 @@ filez hook uninstall
 the background from every login (`journalctl --user -u filez-hook -f` for logs). The watcher waits until
 a file finishes writing, skips hidden/temp files, and copies the link via `wl-copy` (Wayland),
 `xclip`/`xsel` (X11) or `pbcopy` (macOS); notifications use `notify-send`.
+
+## KDE right-click menu (`filez menu`)
+
+Add a **"Share with Filez"** entry to Dolphin's right-click menu — select one or more files, share them,
+and the link lands in your clipboard with a notification.
+
+```sh
+filez menu install     # adds the Dolphin service menu + extracts the icon
+filez menu uninstall
+```
+
+`menu install` extracts the embedded Filez icon to `~/.local/share/icons/hicolor/128x128/apps/filez.png`
+and writes an executable service menu to `~/.local/share/kio/servicemenus/filez-share.desktop` (the
+Plasma 6 location). The menu calls `filez share <files>`, which you can also use directly from scripts.
 
 ## Interactive console UI (`filezui`)
 

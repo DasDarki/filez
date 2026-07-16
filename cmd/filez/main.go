@@ -60,6 +60,8 @@ func newRootCmd() *cobra.Command {
 
 	root.AddCommand(newConfigCmd())
 	root.AddCommand(newHookCmd())
+	root.AddCommand(newShareCmd())
+	root.AddCommand(newMenuCmd())
 	return root
 }
 
