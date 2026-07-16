@@ -43,14 +43,31 @@ func (h *Handlers) Register(app *fiber.App) {
 	// Instance-gated routes. In Fiber the handler chain runs left-to-right, so
 	// the auth middleware MUST come before the actual handler.
 	gated := h.guard.InstanceAuth()
+
+	// Uploading always requires the access key on a private instance.
 	app.Post("/api/upload", gated, h.postUpload)
-	// Readable links keep the original filename in the path; the id (first
-	// segment) is the collision-free, unguessable lookup key. The legacy
-	// "<id>.<ext>" single-segment form stays valid.
-	app.Get("/d/:id/:name", gated, h.getDownload)
-	app.Get("/d/:name", gated, h.getDownload)
-	app.Get("/p/:id/:name", gated, h.getPreview)
-	app.Get("/p/:name", gated, h.getPreview)
+
+	// Download and preview links: by default (PublicLinks) they are reachable
+	// without an access key even on a private instance, so shared links work for
+	// recipients — password-protected files stay gated by their password. Set
+	// PUBLIC_LINKS=false to require the access key here too. Readable links keep
+	// the original filename in the path; the id (first segment) is the
+	// collision-free, unguessable lookup key. The legacy "<id>.<ext>" form works too.
+	var linkGate []fiber.Handler
+	if !h.cfg.PublicLinks {
+		linkGate = []fiber.Handler{gated}
+	}
+	registerLink := func(path string, handler fiber.Handler) {
+		if len(linkGate) > 0 {
+			app.Get(path, linkGate[0], handler)
+		} else {
+			app.Get(path, handler)
+		}
+	}
+	registerLink("/d/:id/:name", h.getDownload)
+	registerLink("/d/:name", h.getDownload)
+	registerLink("/p/:id/:name", h.getPreview)
+	registerLink("/p/:name", h.getPreview)
 
 	// Admin area (only when an admin password is configured).
 	if h.cfg.AdminEnabled() {

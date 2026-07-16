@@ -59,9 +59,10 @@ clash. The legacy `/d/<id>.<ext>` form still resolves.
 
 ### Access model
 
-- **Instance access** (only when `PUBLIC=false`): every upload/link needs a valid access key, passed as
+- **Instance access** (only when `PUBLIC=false`): uploading needs a valid access key, passed as
   `Authorization: Access-Key <key>`, HTTP Basic Auth (any user, password = key), or — in the browser —
-  stored via the gate's *"stay signed in"* option.
+  stored via the gate's *"stay signed in"* option. Download/preview links stay reachable without a key
+  by default so you can share them (set `PUBLIC_LINKS=false` to require the key for links too).
 - **Per-file passwords:** independent of the above. On `/p` you get a password form; on `/d` supply the
   password via `?pw=`, the `X-File-Password` header, or Basic Auth.
 

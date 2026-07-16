@@ -33,6 +33,7 @@ type Config struct {
 	CacheSize     int64  // bytes, ristretto max cost
 	BaseURL       string // optional; if empty, derived from request
 	TrustProxy    bool   // trust X-Forwarded-* from loopback/private proxies (e.g. Coolify/Traefik)
+	PublicLinks   bool   // on a private instance, still serve /d and /p without an access key
 	DefaultUpload DefaultUpload
 }
 
@@ -50,6 +51,7 @@ func Load() (*Config, error) {
 		CacheSize:     envBytes("CACHE_SIZE", 256<<20),    // 256 MiB
 		BaseURL:       strings.TrimRight(os.Getenv("BASE_URL"), "/"),
 		TrustProxy:    envBool("TRUST_PROXY", true),
+		PublicLinks:   envBool("PUBLIC_LINKS", true),
 	}
 
 	du, err := parseDefaultUpload(envStr("DEFAULT_UPLOAD", "permanent"))
