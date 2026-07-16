@@ -1,0 +1,14 @@
+# Runtime data (SQLite + stored files)
+/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Local environment
+.env
+
+# Built binaries
+/filez
+/filezui
+/server
+/filez-server

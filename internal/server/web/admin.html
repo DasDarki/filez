@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Filez · Admin</title>
+  <link rel="stylesheet" href="/assets/app.css" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="128x128" href="/assets/favicon.png" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-mark"><span class="logo">F</span> Filez · Admin</div>
+    <div style="display:flex;gap:10px">
+      <a class="icon-btn" href="/" title="Zur Startseite">🏠</a>
+      <button id="theme-toggle" class="icon-btn" title="Theme wechseln">🌙</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h1>Access Keys</h1>
+      <p class="subtitle">Erstelle Keys, mit denen auf diese private Instanz zugegriffen werden kann.</p>
+
+      <div class="field">
+        <label>Neuen Key erstellen</label>
+        <div class="inputs">
+          <input id="new-label" type="text" placeholder="Bezeichnung (optional), z.B. Laptop" />
+          <input id="new-expiry" type="text" placeholder="Ablauf (optional), z.B. 7d, 1M — leer = permanent" />
+        </div>
+        <button id="create-btn" class="btn btn-primary">Key erstellen</button>
+      </div>
+
+      <div id="created" class="alert hidden"></div>
+      <div id="admin-error" class="alert danger hidden"></div>
+
+      <table class="keys">
+        <thead>
+          <tr><th>Key</th><th>Label</th><th>Erstellt</th><th>Ablauf</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody id="keys-body"></tbody>
+      </table>
+      <p id="empty-hint" class="hint hidden">Noch keine Keys vorhanden.</p>
+    </section>
+  </main>
+
+  <footer id="brand"></footer>
+  <div id="toast" class="toast"></div>
+  <script src="/assets/common.js"></script>
+  <script src="/assets/admin.js"></script>
+</body>
+</html>

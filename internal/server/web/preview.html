@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Filez · {{.Name}}</title>
+  <link rel="stylesheet" href="/assets/app.css" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="128x128" href="/assets/favicon.png" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-mark"><span class="logo">F</span> Filez</div>
+    <div style="display:flex;gap:10px">
+      <a class="icon-btn" href="/" title="Zur Startseite">🏠</a>
+      <button id="theme-toggle" class="icon-btn" title="Theme wechseln">🌙</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="preview-meta">
+        <span class="pv-icon" id="pv-icon">📦</span>
+        <div style="min-width:0">
+          <div class="pv-name">{{.Name}}</div>
+          <div class="pv-sub">{{.MIME}}</div>
+        </div>
+        <a class="btn btn-ghost" style="margin-left:auto" id="dl-top" href="{{.DownloadURL}}">Download</a>
+      </div>
+
+      <div id="pw-form" class="field hidden">
+        <label>🔒 Diese Datei ist passwortgeschützt</label>
+        <input id="pw-input" type="password" placeholder="Passwort" autocomplete="off" />
+        <div id="pw-error" class="alert danger hidden"></div>
+        <button id="pw-submit" class="btn btn-primary">Entsperren</button>
+      </div>
+
+      <div id="viewer" class="viewer hidden"></div>
+
+      <div id="pv-config"
+        data-id="{{.ID}}"
+        data-name="{{.Name}}"
+        data-ext="{{.Ext}}"
+        data-mime="{{.MIME}}"
+        data-size="{{.Size}}"
+        data-kind="{{.Kind}}"
+        data-haspw="{{.HasPassword}}"
+        data-limited="{{.Limited}}"
+        data-url="{{.DownloadURL}}"
+        data-entries="{{.EntriesJSON}}"></div>
+    </section>
+  </main>
+
+  <footer id="brand"></footer>
+  <div id="toast" class="toast"></div>
+  <script src="/assets/common.js"></script>
+  <script src="/assets/preview.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# Keep the build context small and reproducible.
+.git
+.gitignore
+README.md
+concept.md
+favicon.png
+.env
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# Built binaries
+filez
+filezui
+server
+filez-server

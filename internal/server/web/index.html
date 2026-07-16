@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Filez</title>
+  <link rel="stylesheet" href="/assets/app.css" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="128x128" href="/assets/favicon.png" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-mark"><span class="logo">F</span> Filez</div>
+    <div style="display:flex;gap:10px">
+      <a id="admin-link" class="icon-btn hidden" href="/admin" title="Admin">⚙</a>
+      <button id="theme-toggle" class="icon-btn" title="Theme wechseln">🌙</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Access-key gate (shown when instance is not public) -->
+    <section id="gate" class="card gate">
+      <h1>Zugang erforderlich</h1>
+      <p class="subtitle">Diese Filez-Instanz ist privat. Bitte gib deinen Access Key ein.</p>
+      <div class="field">
+        <input id="gate-key" type="password" placeholder="Access Key" autocomplete="off" />
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:14px;color:var(--fg-muted)">
+        <input id="gate-remember" type="checkbox" checked style="width:auto" />
+        Angemeldet bleiben (Access Key wird lokal in diesem Browser gespeichert)
+      </label>
+      <div id="gate-error" class="alert danger hidden"></div>
+      <button id="gate-submit" class="btn btn-primary">Freischalten</button>
+    </section>
+
+    <!-- Upload panel -->
+    <section id="app" class="card hidden">
+      <h1>Datei teilen</h1>
+      <p class="subtitle">Zieh eine Datei hierher oder klicke zum Auswählen.</p>
+
+      <div id="dropzone" class="dropzone">
+        <div class="dz-icon">📤</div>
+        <div class="dz-title">Datei ablegen</div>
+        <div class="dz-hint">oder klicken zum Durchsuchen</div>
+        <input id="file-input" type="file" class="hidden" />
+      </div>
+
+      <div id="file-chip" class="file-chip hidden">
+        <span class="fc-icon">📄</span>
+        <div style="min-width:0">
+          <div id="fc-name" class="fc-name"></div>
+          <div id="fc-size" class="fc-size"></div>
+        </div>
+        <button id="fc-remove" class="fc-remove" title="Entfernen">✕</button>
+      </div>
+
+      <div class="field">
+        <label>Modus</label>
+        <div class="segmented" id="mode">
+          <button data-mode="permanent" class="active">Permanent</button>
+          <button data-mode="temp">Temporär</button>
+          <button data-mode="limited">Begrenzt</button>
+          <button data-mode="password">Passwort</button>
+        </div>
+        <div class="inputs">
+          <div class="input-row" data-for="temp">
+            <input id="opt-ttl" type="text" placeholder="z.B. 20m, 2d, 2d20m, 1M" />
+            <div class="hint">Einheiten: s, m, h, d, w, M (Monat = 30 Tage). Kombinationen erlaubt.</div>
+          </div>
+          <div class="input-row" data-for="limited">
+            <input id="opt-downloads" type="number" min="1" value="1" placeholder="Anzahl Downloads" />
+            <div class="hint">Datei wird nach dieser Anzahl an Downloads gelöscht.</div>
+          </div>
+          <div class="input-row" data-for="password">
+            <input id="opt-password" type="password" placeholder="Passwort" autocomplete="new-password" />
+            <div class="hint">Zum Öffnen der Datei muss dieses Passwort eingegeben werden.</div>
+          </div>
+        </div>
+      </div>
+
+      <button id="upload-btn" class="btn btn-primary" disabled>Hochladen</button>
+      <div id="progress" class="progress"><span></span></div>
+      <div id="upload-error" class="alert danger hidden"></div>
+
+      <div id="result" class="result">
+        <h3>✅ Bereit — hier ist dein Link:</h3>
+        <div class="link-box">
+          <input id="result-link" type="text" readonly />
+          <button id="copy-btn" class="btn btn-ghost">Kopieren</button>
+        </div>
+        <div class="result-actions">
+          <a id="preview-link" class="btn btn-ghost" target="_blank" rel="noopener">Vorschau öffnen</a>
+          <button id="another-btn" class="btn btn-ghost">Weitere Datei</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="brand"></footer>
+  <div id="toast" class="toast"></div>
+  <script src="/assets/common.js"></script>
+  <script src="/assets/app.js"></script>
+</body>
+</html>
