@@ -28,6 +28,10 @@
         <div class="inputs">
           <input id="new-label" type="text" placeholder="Bezeichnung (optional), z.B. Laptop" />
           <input id="new-expiry" type="text" placeholder="Ablauf (optional), z.B. 7d, 1M — leer = permanent" />
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px">
+            <input id="new-allow-permanent" type="checkbox" style="width:auto" />
+            Darf permanente Dateien hochladen (vom Auto-Cleanup ausgenommen)
+          </label>
         </div>
         <button id="create-btn" class="btn btn-primary">Key erstellen</button>
       </div>
@@ -37,7 +41,7 @@
 
       <table class="keys">
         <thead>
-          <tr><th>Key</th><th>Label</th><th>Erstellt</th><th>Ablauf</th><th>Status</th><th></th></tr>
+          <tr><th>Key</th><th>Label</th><th>Erstellt</th><th>Ablauf</th><th>Permanent</th><th>Status</th><th></th></tr>
         </thead>
         <tbody id="keys-body"></tbody>
       </table>

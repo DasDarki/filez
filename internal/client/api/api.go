@@ -97,6 +97,7 @@ type UploadOptions struct {
 	TTL       string // for temp, e.g. "2d20m"
 	Downloads int    // for limited
 	Password  string // optional, any mode
+	Keep      bool   // exempt from idle cleanup (needs permission on private)
 }
 
 // UploadResult is the /api/upload response.
@@ -139,6 +140,9 @@ func (c *Client) Upload(path string, opts UploadOptions, progress func(sent, tot
 	}
 	if opts.Mode == "limited" {
 		fields["downloads"] = strconv.Itoa(opts.Downloads)
+	}
+	if opts.Keep {
+		fields["keep"] = "true"
 	}
 	for name, val := range fields {
 		if val == "" {

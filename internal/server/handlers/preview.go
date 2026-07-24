@@ -16,6 +16,7 @@ func (h *Handlers) getPreview(c fiber.Ctx) error {
 	if err != nil {
 		return h.fileError(c, err)
 	}
+	h.files.TouchAccess(f.ID) // viewing a preview counts as access
 
 	kind := classify(f.MIME, f.Ext)
 	data := web.PreviewData{

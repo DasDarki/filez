@@ -26,8 +26,9 @@ func (h *Handlers) listKeys(c fiber.Ctx) error {
 // createKey creates a new access key with an optional label and expiry.
 func (h *Handlers) createKey(c fiber.Ctx) error {
 	var req struct {
-		Label  string `json:"label"`
-		Expiry string `json:"expiry"`
+		Label          string `json:"label"`
+		Expiry         string `json:"expiry"`
+		AllowPermanent bool   `json:"allow_permanent"`
 	}
 	if body := c.Body(); len(body) > 0 {
 		if err := json.Unmarshal(body, &req); err != nil {
@@ -37,9 +38,10 @@ func (h *Handlers) createKey(c fiber.Ctx) error {
 
 	now := time.Now().Unix()
 	k := &db.AccessKey{
-		Key:       idgen.NewKey(),
-		Label:     req.Label,
-		CreatedAt: now,
+		Key:            idgen.NewKey(),
+		Label:          req.Label,
+		CreatedAt:      now,
+		AllowPermanent: req.AllowPermanent,
 	}
 	if req.Expiry != "" {
 		d, err := timefmt.Parse(req.Expiry)
@@ -66,10 +68,11 @@ func (h *Handlers) deleteKey(c fiber.Ctx) error {
 
 func keyJSON(k *db.AccessKey) fiber.Map {
 	return fiber.Map{
-		"key":        k.Key,
-		"label":      k.Label,
-		"expires_at": k.ExpiresAt,
-		"revoked":    k.Revoked,
-		"created_at": k.CreatedAt,
+		"key":             k.Key,
+		"label":           k.Label,
+		"expires_at":      k.ExpiresAt,
+		"revoked":         k.Revoked,
+		"created_at":      k.CreatedAt,
+		"allow_permanent": k.AllowPermanent,
 	}
 }

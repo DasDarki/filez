@@ -38,6 +38,7 @@
         '<td>' + (k.label ? escapeHtml(k.label) : "—") + '</td>' +
         '<td>' + fmtDate(k.created_at) + '</td>' +
         '<td>' + fmtDate(k.expires_at) + '</td>' +
+        '<td>' + (k.allow_permanent ? '<span class="badge">✓</span>' : '<span class="badge expired">–</span>') + '</td>' +
         '<td><span class="badge' + (expired ? " expired" : "") + '">' +
           (expired ? "abgelaufen" : "aktiv") + '</span></td>' +
         '<td></td>';
@@ -65,6 +66,7 @@
   $("create-btn").addEventListener("click", async () => {
     const label = $("new-label").value.trim();
     const expiry = $("new-expiry").value.trim();
+    const allowPermanent = $("new-allow-permanent").checked;
     const created = $("created");
     const err = $("admin-error");
     created.classList.add("hidden");
@@ -73,7 +75,7 @@
       const r = await fetch("/api/admin/keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label, expiry }),
+        body: JSON.stringify({ label, expiry, allow_permanent: allowPermanent }),
       });
       if (!r.ok) {
         let msg = "HTTP " + r.status;
@@ -85,6 +87,7 @@
       created.classList.remove("hidden");
       $("new-label").value = "";
       $("new-expiry").value = "";
+      $("new-allow-permanent").checked = false;
       loadKeys();
     } catch (e) {
       err.textContent = "Erstellen fehlgeschlagen: " + e.message;

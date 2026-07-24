@@ -44,7 +44,11 @@ func main() {
 	}
 	defer store.Close()
 
-	svc := files.New(database, store, cfg.MaxUploadSize)
+	var cleanupAfter time.Duration
+	if cfg.CleanupEnabled {
+		cleanupAfter = cfg.CleanupAfter
+	}
+	svc := files.New(database, store, cfg.MaxUploadSize, cleanupAfter)
 	guard := auth.New(cfg, database)
 
 	app := fiber.New(fiber.Config{
@@ -110,6 +114,10 @@ func logStartup(cfg *config.Config) {
 	if cfg.AdminEnabled() {
 		admin = "enabled (/admin)"
 	}
-	log.Printf("Filez %s listening on :%d — %s — admin: %s — data: %s",
-		version, cfg.Port, mode, admin, cfg.DataDir)
+	cleanup := "off"
+	if cfg.CleanupEnabled {
+		cleanup = "idle > " + cfg.CleanupRaw
+	}
+	log.Printf("Filez %s listening on :%d — %s — admin: %s — cleanup: %s — data: %s",
+		version, cfg.Port, mode, admin, cleanup, cfg.DataDir)
 }

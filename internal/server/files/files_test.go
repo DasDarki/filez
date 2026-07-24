@@ -3,12 +3,15 @@ package files
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/DasDarki/filez/internal/server/db"
 	"github.com/DasDarki/filez/internal/server/storage"
 )
 
-func newTestService(t *testing.T) *Service {
+func newTestService(t *testing.T) *Service { return newTestServiceCleanup(t, 0) }
+
+func newTestServiceCleanup(t *testing.T, cleanup time.Duration) *Service {
 	t.Helper()
 	dir := t.TempDir()
 	database, err := db.Open(dir)
@@ -21,7 +24,7 @@ func newTestService(t *testing.T) *Service {
 		t.Fatalf("storage.New: %v", err)
 	}
 	t.Cleanup(store.Close)
-	return New(database, store, 1<<20)
+	return New(database, store, 1<<20, cleanup)
 }
 
 func TestCreateGetBytes(t *testing.T) {
@@ -91,6 +94,52 @@ func TestLimitedDownloads(t *testing.T) {
 	// Once exhausted, Get treats it as gone.
 	if _, err := svc.Get(f.ID); err != ErrGone {
 		t.Errorf("Get after exhaustion = %v, want ErrGone", err)
+	}
+}
+
+func TestIdleCleanup(t *testing.T) {
+	svc := newTestServiceCleanup(t, time.Hour)
+	perm, _ := svc.Create(strings.NewReader("perm"), CreateOptions{Mode: db.ModePermanent})
+	kept, _ := svc.Create(strings.NewReader("kept"), CreateOptions{Mode: db.ModePermanent, Keep: true})
+	tmp, _ := svc.Create(strings.NewReader("tmp"), CreateOptions{Mode: db.ModeTemp, TTL: 100 * time.Hour})
+
+	// Jump two hours into the future (idle window is one hour).
+	svc.now = func() int64 { return perm.CreatedAt + 2*3600 }
+
+	n, err := svc.CleanupExpired()
+	if err != nil {
+		t.Fatalf("CleanupExpired: %v", err)
+	}
+	if n != 1 {
+		t.Errorf("expected 1 file cleaned, got %d", n)
+	}
+	if _, err := svc.Get(perm.ID); err != ErrNotFound {
+		t.Errorf("idle permanent file should be gone, got %v", err)
+	}
+	if _, err := svc.Get(kept.ID); err != nil {
+		t.Errorf("kept file should survive idle cleanup, got %v", err)
+	}
+	if _, err := svc.Get(tmp.ID); err != nil {
+		t.Errorf("temp file within TTL should survive, got %v", err)
+	}
+}
+
+func TestTouchAccessPreventsCleanup(t *testing.T) {
+	svc := newTestServiceCleanup(t, time.Hour)
+	f, _ := svc.Create(strings.NewReader("x"), CreateOptions{Mode: db.ModePermanent})
+
+	svc.now = func() int64 { return f.CreatedAt + 2*3600 }
+	svc.TouchAccess(f.ID) // refresh access time to "now"
+
+	n, err := svc.CleanupExpired()
+	if err != nil {
+		t.Fatalf("CleanupExpired: %v", err)
+	}
+	if n != 0 {
+		t.Errorf("expected nothing cleaned, got %d", n)
+	}
+	if _, err := svc.Get(f.ID); err != nil {
+		t.Errorf("recently accessed file should survive, got %v", err)
 	}
 }
 

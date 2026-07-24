@@ -64,6 +64,12 @@
           <button data-mode="password">Passwort</button>
         </div>
         <div class="inputs">
+          <div class="input-row" data-for="permanent">
+            <label id="keep-label" class="hidden" style="display:flex;align-items:center;gap:8px;font-weight:500">
+              <input id="opt-keep" type="checkbox" style="width:auto" /> Permanent behalten (nie automatisch löschen)
+            </label>
+            <div id="cleanup-hint" class="hint hidden"></div>
+          </div>
           <div class="input-row" data-for="temp">
             <input id="opt-ttl" type="text" placeholder="z.B. 20m, 2d, 2d20m, 1M" />
             <div class="hint">Einheiten: s, m, h, d, w, M (Monat = 30 Tage). Kombinationen erlaubt.</div>

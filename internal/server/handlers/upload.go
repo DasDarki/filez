@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/DasDarki/filez/internal/server/auth"
 	"github.com/DasDarki/filez/internal/server/db"
 	"github.com/DasDarki/filez/internal/server/files"
 	"github.com/DasDarki/filez/internal/server/storage"
@@ -68,6 +69,24 @@ func (h *Handlers) postUpload(c fiber.Ctx) error {
 		opts.Downloads = n
 	default:
 		return jsonErr(c, fiber.StatusBadRequest, "unknown mode")
+	}
+
+	// --keep exempts a permanent file from idle cleanup. When cleanup is active
+	// this requires authorization: never allowed on a public instance, and on a
+	// private instance only for access keys the admin has granted it.
+	if v := c.FormValue("keep"); v == "true" || v == "1" || v == "on" {
+		if h.cfg.CleanupEnabled && opts.Mode == db.ModePermanent {
+			if h.cfg.Public {
+				return jsonErr(c, fiber.StatusForbidden,
+					"permanent files are not allowed on this public instance (idle cleanup is active)")
+			}
+			ak, err := h.db.GetAccessKey(auth.ExtractAccessKey(c))
+			if err != nil || !ak.AllowPermanent {
+				return jsonErr(c, fiber.StatusForbidden,
+					"this access key is not allowed to create permanent files")
+			}
+		}
+		opts.Keep = true
 	}
 
 	src, err := fh.Open()

@@ -8,6 +8,7 @@ Upload from a minimalist web UI or straight from your terminal, and share a link
 ## Features
 
 - **Four kinds of files:** permanent, temporary (auto-expiring), download-limited, and password-protected.
+- **Idle cleanup:** optionally delete permanent files that haven't been accessed in a while, with an authorized "keep forever" override.
 - **Web UI:** drag & drop upload, light/dark mode, self-hosted font (no external CDN — GDPR friendly).
 - **Direct links** (`/d/…`) and **rich previews** (`/p/…`): text viewer, image/audio/video players, PDF embed, ZIP listing.
 - **Public or private:** open to everyone by default, or gated behind access keys managed in a Basic-Auth admin area.
@@ -66,6 +67,23 @@ clash. The legacy `/d/<id>.<ext>` form still resolves.
 - **Per-file passwords:** independent of the above. On `/p` you get a password form; on `/d` supply the
   password via `?pw=`, the `X-File-Password` header, or Basic Auth.
 
+### Idle cleanup & permanent files
+
+`CLEANUP` (default `1w`) deletes **permanent** files that haven't been accessed (via `/d` or `/p`)
+within the period; temporary and download-limited files keep their own explicit lifecycles. Set
+`CLEANUP=off` to disable it.
+
+A file can opt out of cleanup with **keep** (truly permanent). Because a public instance would otherwise
+fill up forever, keep is gated:
+
+- **Public instance + cleanup on:** keep is never allowed — no file survives indefinitely.
+- **Private instance:** keep requires an access key the admin granted the *"may upload permanent files"*
+  permission (a checkbox when creating the key in `/admin`).
+- **Cleanup off:** permanent means permanent; keep is unrestricted.
+
+From the CLI: `filez file.zip --keep`. In the web UI a *"keep permanent"* checkbox appears when your key
+is allowed; otherwise a hint shows the cleanup period.
+
 ### Download limits vs. previews
 
 For download-limited files, the counter is spent on the **actual file delivery** via `/d`. To keep the count
@@ -101,11 +119,12 @@ filez report.pdf                   # uses the configured default mode
 filez photo.png --temp 2d20m       # temporary (units: s m h d w M[onth])
 filez build.zip  --downloads 3     # delete after 3 downloads
 filez notes.txt  --password s3cret # password protected
+filez keepme.pdf --keep            # exempt from idle cleanup (needs an authorized key)
 filez data.bin   --host other      # pick a specific host
 ```
 
 Short aliases mirror the flags: `-p`/`--permanent`, `-t`/`--temp`, `--pw`/`--password`,
-`--dl`/`--downloads`, `-H`/`--host`. The default upload mode comes from `$DEFAULT_UPLOAD`, then the
+`--dl`/`--downloads`, `-k`/`--keep`, `-H`/`--host`. The default upload mode comes from `$DEFAULT_UPLOAD`, then the
 CLI config, then `permanent`.
 
 Config is stored at `$XDG_CONFIG_HOME/filez/config.json` (mode `0600`, since it holds access keys).

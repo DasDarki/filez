@@ -34,6 +34,11 @@ type Config struct {
 	BaseURL       string // optional; if empty, derived from request
 	TrustProxy    bool   // trust X-Forwarded-* from loopback/private proxies (e.g. Coolify/Traefik)
 	PublicLinks   bool   // on a private instance, still serve /d and /p without an access key
+
+	CleanupEnabled bool          // delete idle permanent files
+	CleanupAfter   time.Duration // idle period before deletion
+	CleanupRaw     string        // original CLEANUP value, echoed to clients
+
 	DefaultUpload DefaultUpload
 }
 
@@ -60,7 +65,35 @@ func Load() (*Config, error) {
 	}
 	cfg.DefaultUpload = du
 
+	if err := parseCleanup(envStr("CLEANUP", "1w"), cfg); err != nil {
+		return nil, err
+	}
+
 	return cfg, nil
+}
+
+// parseCleanup interprets the CLEANUP env value: a duration enables idle cleanup
+// with that period, while "off"/"false"/"0"/"no" disables it.
+func parseCleanup(raw string, cfg *Config) error {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		raw = "1w"
+	}
+	switch strings.ToLower(raw) {
+	case "off", "false", "0", "no", "none", "disabled":
+		cfg.CleanupEnabled = false
+		cfg.CleanupAfter = 0
+		cfg.CleanupRaw = "off"
+		return nil
+	}
+	d, err := timefmt.Parse(raw)
+	if err != nil {
+		return fmt.Errorf("CLEANUP: %w (use a duration like 1w, 30d, or 'off')", err)
+	}
+	cfg.CleanupEnabled = true
+	cfg.CleanupAfter = d
+	cfg.CleanupRaw = raw
+	return nil
 }
 
 // AdminEnabled reports whether the /admin area and access-key management are active.

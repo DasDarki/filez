@@ -22,19 +22,22 @@ var ErrNotFound = db.ErrNotFound
 
 // Service coordinates the metadata store and byte storage.
 type Service struct {
-	db        *db.DB
-	store     *storage.Store
-	maxUpload int64
-	now       func() int64
+	db           *db.DB
+	store        *storage.Store
+	maxUpload    int64
+	cleanupAfter time.Duration // 0 = idle cleanup disabled
+	now          func() int64
 }
 
-// New builds a file service.
-func New(database *db.DB, store *storage.Store, maxUpload int64) *Service {
+// New builds a file service. cleanupAfter is the idle period before permanent,
+// non-kept files are deleted (0 disables idle cleanup).
+func New(database *db.DB, store *storage.Store, maxUpload int64, cleanupAfter time.Duration) *Service {
 	return &Service{
-		db:        database,
-		store:     store,
-		maxUpload: maxUpload,
-		now:       func() int64 { return time.Now().Unix() },
+		db:           database,
+		store:        store,
+		maxUpload:    maxUpload,
+		cleanupAfter: cleanupAfter,
+		now:          func() int64 { return time.Now().Unix() },
 	}
 }
 
@@ -44,6 +47,7 @@ type CreateOptions struct {
 	TTL       time.Duration // for ModeTemp
 	Downloads int64         // for ModeLimited
 	Password  string        // empty = none
+	Keep      bool          // exempt from idle cleanup
 	OrigName  string
 	Ext       string
 	MIME      string
@@ -63,14 +67,16 @@ func (s *Service) Create(r io.Reader, opts CreateOptions) (*db.File, error) {
 
 	now := s.now()
 	f := &db.File{
-		ID:          id,
-		Ext:         opts.Ext,
-		OrigName:    opts.OrigName,
-		Size:        size,
-		MIME:        opts.MIME,
-		Mode:        opts.Mode,
-		StoragePath: rel,
-		CreatedAt:   now,
+		ID:             id,
+		Ext:            opts.Ext,
+		OrigName:       opts.OrigName,
+		Size:           size,
+		MIME:           opts.MIME,
+		Mode:           opts.Mode,
+		StoragePath:    rel,
+		CreatedAt:      now,
+		LastAccessedAt: now,
+		Keep:           opts.Keep,
 	}
 
 	switch opts.Mode {
@@ -147,6 +153,12 @@ func (s *Service) BumpCount(id string) {
 	_ = s.db.BumpDownloadCount(id)
 }
 
+// TouchAccess refreshes a file's last-access time so idle cleanup won't remove it
+// (best effort).
+func (s *Service) TouchAccess(id string) {
+	_ = s.db.TouchAccess(id, s.now())
+}
+
 // Bytes returns the file contents, using the memory cache for eligible sizes.
 func (s *Service) Bytes(f *db.File) ([]byte, error) {
 	if s.store.Cacheable(f.Size) {
@@ -173,14 +185,35 @@ func (s *Service) Delete(f *db.File) error {
 	return s.db.DeleteFile(f.ID)
 }
 
-// CleanupExpired removes all currently-expired files, returning the count.
+// CleanupExpired removes expired temp/limited files and, when idle cleanup is
+// enabled, permanent non-kept files that have not been accessed within the
+// configured period. It returns the number of files removed.
 func (s *Service) CleanupExpired() (int, error) {
-	expired, err := s.db.ExpiredFiles(s.now())
+	now := s.now()
+
+	expired, err := s.db.ExpiredFiles(now)
 	if err != nil {
 		return 0, err
 	}
+	seen := make(map[string]bool, len(expired))
 	for _, f := range expired {
-		_ = s.Delete(f)
+		if !seen[f.ID] {
+			seen[f.ID] = true
+			_ = s.Delete(f)
+		}
 	}
-	return len(expired), nil
+
+	if s.cleanupAfter > 0 {
+		idle, err := s.db.IdlePermanentFiles(now - int64(s.cleanupAfter.Seconds()))
+		if err != nil {
+			return len(seen), err
+		}
+		for _, f := range idle {
+			if !seen[f.ID] {
+				seen[f.ID] = true
+				_ = s.Delete(f)
+			}
+		}
+	}
+	return len(seen), nil
 }

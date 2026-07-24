@@ -8,6 +8,8 @@
   let selectedFile = null;
   let mode = "permanent";
   let maxUploadSize = 0;
+  let cleanupEnabled = false;
+  let cleanupAfter = "";
 
   function getKey() {
     return localStorage.getItem(KEY_STORE) || sessionStorage.getItem(KEY_STORE) || "";
@@ -33,6 +35,8 @@
     try { info = await (await fetch("/api/info")).json(); } catch {}
 
     maxUploadSize = info.max_upload_size || 0;
+    cleanupEnabled = !!info.cleanup;
+    cleanupAfter = info.cleanup_after || "";
     if (info.admin_enabled) $("admin-link").classList.remove("hidden");
 
     // Default mode from server config (permanent | temp:...).
@@ -50,7 +54,29 @@
   }
 
   function showGate() { $("gate").classList.add("show"); $("app").classList.add("hidden"); }
-  function showApp() { $("gate").classList.remove("show"); $("app").classList.remove("hidden"); }
+  function showApp() { $("gate").classList.remove("show"); $("app").classList.remove("hidden"); setupKeepUI(); }
+
+  // Show the "keep permanent" checkbox when the current user may create permanent
+  // files, otherwise a hint that permanent uploads get cleaned up when idle.
+  async function setupKeepUI() {
+    const keepLabel = $("keep-label");
+    const hint = $("cleanup-hint");
+    keepLabel.classList.add("hidden");
+    hint.classList.add("hidden");
+    if (!cleanupEnabled) return; // permanent really means permanent
+    let allow = false;
+    try {
+      const key = getKey();
+      const r = await fetch("/api/auth/check", { headers: key ? { "X-Access-Key": key } : {} });
+      if (r.ok) allow = !!(await r.json()).allow_permanent;
+    } catch {}
+    if (allow) {
+      keepLabel.classList.remove("hidden");
+    } else {
+      hint.textContent = "Permanente Uploads werden nach " + cleanupAfter + " ohne Abruf automatisch gelöscht.";
+      hint.classList.remove("hidden");
+    }
+  }
 
   // ---- Gate ----
   $("gate-submit").addEventListener("click", async () => {
@@ -132,6 +158,7 @@
     if (mode === "temp") fd.append("ttl", $("opt-ttl").value.trim());
     if (mode === "limited") fd.append("downloads", $("opt-downloads").value);
     if (mode === "password") fd.append("password", $("opt-password").value);
+    if (mode === "permanent" && $("opt-keep").checked) fd.append("keep", "true");
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/upload");

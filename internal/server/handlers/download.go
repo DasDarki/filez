@@ -22,6 +22,9 @@ func (h *Handlers) getDownload(c fiber.Ctx) error {
 	}
 
 	initial := isInitialRequest(c)
+	if initial {
+		h.files.TouchAccess(f.ID) // refresh idle-cleanup timer
+	}
 
 	// Limited files spend one download on the initial (non-range-continuation) GET.
 	if f.Mode == db.ModeLimited {

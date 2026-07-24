@@ -22,6 +22,7 @@ var (
 	flagTemp      string
 	flagPassword  string
 	flagDownloads int
+	flagKeep      bool
 )
 
 func main() {
@@ -56,6 +57,7 @@ func newRootCmd() *cobra.Command {
 	f.StringVarP(&flagTemp, "temp", "t", "", "store temporarily for a duration (e.g. 20m, 2d, 2d20m, 1M)")
 	f.StringVarP(&flagPassword, "password", "P", "", "protect the file with a password")
 	f.IntVarP(&flagDownloads, "downloads", "d", 0, "delete after this many downloads")
+	f.BoolVarP(&flagKeep, "keep", "k", false, "never auto-delete (exempt from idle cleanup; may need an authorized key)")
 	f.SetNormalizeFunc(normalizeFlags)
 
 	root.AddCommand(newConfigCmd())
@@ -102,11 +104,11 @@ func runUpload(path string) error {
 
 	fmt.Println(ui.Logo())
 	info(fmt.Sprintf("Host: %s", host.Name))
-	info("Mode: " + describeMode(mode, ttl, downloads, flagPassword != ""))
+	info("Mode: " + describeMode(mode, ttl, downloads, flagPassword != "", flagKeep))
 	fmt.Println()
 
 	client := api.FromHost(host)
-	opts := api.UploadOptions{Mode: mode, TTL: ttl, Downloads: downloads, Password: flagPassword}
+	opts := api.UploadOptions{Mode: mode, TTL: ttl, Downloads: downloads, Password: flagPassword, Keep: flagKeep}
 
 	res, err := client.Upload(path, opts, progressPrinter())
 	fmt.Print("\r\033[K") // clear progress line
@@ -202,7 +204,7 @@ func parseDefault(raw string) (mode, ttl string, downloads int, err error) {
 	return "permanent", "", 0, nil
 }
 
-func describeMode(mode, ttl string, downloads int, hasPw bool) string {
+func describeMode(mode, ttl string, downloads int, hasPw, keep bool) string {
 	var s string
 	switch mode {
 	case "temp":
@@ -211,6 +213,9 @@ func describeMode(mode, ttl string, downloads int, hasPw bool) string {
 		s = fmt.Sprintf("limited (%d downloads)", downloads)
 	default:
 		s = "permanent"
+	}
+	if keep {
+		s += " + keep"
 	}
 	if hasPw {
 		s += " + password"
