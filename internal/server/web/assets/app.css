@@ -289,13 +289,31 @@ footer {
 .gate.show { display: block; }
 .hidden { display: none !important; }
 
-/* Admin table */
-table.keys { width: 100%; border-collapse: collapse; margin-top: 10px; }
-table.keys th, table.keys td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); font-size: 14px; }
-table.keys th { color: var(--fg-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
-table.keys code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
-.badge { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
-.badge.expired { background: transparent; color: var(--fg-muted); border: 1px solid var(--border); }
+/* Admin key cards */
+#keys-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.key-card { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
+.key-card .kc-top { display: flex; align-items: flex-start; gap: 10px; }
+.key-card .kc-code {
+  flex: 1; min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 10px; cursor: pointer; overflow-wrap: anywhere; line-height: 1.4;
+}
+.key-card .kc-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.key-card .kc-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.key-card .kc-meta { color: var(--fg-muted); font-size: 12.5px; margin-top: 8px; display: flex; flex-wrap: wrap; gap: 3px 12px; overflow-wrap: anywhere; }
+.icon-btn.sm { width: 34px; height: 34px; font-size: 15px; border-radius: 9px; }
+
+.badge { font-size: 12px; padding: 2px 9px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.badge.muted { background: transparent; color: var(--fg-muted); border: 1px solid var(--border); }
+.badge.expired { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+.badge.ok { background: transparent; color: var(--ok); border: 1px solid var(--ok); }
+
+/* Inline key editor */
+.key-edit { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); display: grid; gap: 10px; }
+.key-edit label.check { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.key-edit .ke-actions { display: flex; gap: 8px; }
+.key-edit input[type="checkbox"] { width: auto; }
 
 /* Preview */
 .preview-meta { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }

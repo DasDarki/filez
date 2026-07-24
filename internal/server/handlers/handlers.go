@@ -75,6 +75,7 @@ func (h *Handlers) Register(app *fiber.App) {
 		app.Get("/admin", admin, h.getAdminPage)
 		app.Get("/api/admin/keys", admin, h.listKeys)
 		app.Post("/api/admin/keys", admin, h.createKey)
+		app.Patch("/api/admin/keys/:key", admin, h.updateKey)
 		app.Delete("/api/admin/keys/:key", admin, h.deleteKey)
 	}
 }

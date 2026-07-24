@@ -55,6 +55,20 @@ func (d *DB) ListAccessKeys() ([]*AccessKey, error) {
 	return out, rows.Err()
 }
 
+// UpdateAccessKey changes a key's label, expiry and permanent permission.
+func (d *DB) UpdateAccessKey(key, label string, expiresAt *int64, allowPermanent bool) error {
+	res, err := d.write.Exec(`
+UPDATE access_keys SET label = ?, expires_at = ?, allow_permanent = ? WHERE key = ?`,
+		label, expiresAt, boolToInt(allowPermanent), key)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // DeleteAccessKey removes a key permanently.
 func (d *DB) DeleteAccessKey(key string) error {
 	_, err := d.write.Exec(`DELETE FROM access_keys WHERE key = ?`, key)

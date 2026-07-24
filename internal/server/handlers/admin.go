@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/DasDarki/filez/internal/server/db"
@@ -56,6 +57,54 @@ func (h *Handlers) createKey(c fiber.Ctx) error {
 		return jsonErr(c, fiber.StatusInternalServerError, "could not create key")
 	}
 	return c.Status(fiber.StatusCreated).JSON(keyJSON(k))
+}
+
+// updateKey edits a key's label, permanent permission and (optionally) expiry.
+// Fields are partial: an omitted field is left unchanged. For expiry, "" is
+// ignored (unchanged) while "never"/"nie"/"-" clears it.
+func (h *Handlers) updateKey(c fiber.Ctx) error {
+	k, err := h.db.GetAccessKey(c.Params("key"))
+	if err != nil {
+		return jsonErr(c, fiber.StatusNotFound, "key not found")
+	}
+
+	var req struct {
+		Label          *string `json:"label"`
+		AllowPermanent *bool   `json:"allow_permanent"`
+		Expiry         *string `json:"expiry"`
+	}
+	if body := c.Body(); len(body) > 0 {
+		if err := json.Unmarshal(body, &req); err != nil {
+			return jsonErr(c, fiber.StatusBadRequest, "invalid JSON")
+		}
+	}
+
+	if req.Label != nil {
+		k.Label = *req.Label
+	}
+	if req.AllowPermanent != nil {
+		k.AllowPermanent = *req.AllowPermanent
+	}
+	if req.Expiry != nil {
+		switch v := strings.TrimSpace(*req.Expiry); strings.ToLower(v) {
+		case "":
+			// keep current expiry unchanged
+		case "never", "nie", "-", "0", "off":
+			k.ExpiresAt = nil
+		default:
+			d, err := timefmt.Parse(v)
+			if err != nil {
+				return jsonErr(c, fiber.StatusBadRequest, "invalid expiry: "+err.Error())
+			}
+			exp := time.Now().Unix() + int64(d.Seconds())
+			k.ExpiresAt = &exp
+		}
+	}
+
+	if err := h.db.UpdateAccessKey(k.Key, k.Label, k.ExpiresAt, k.AllowPermanent); err != nil {
+		return jsonErr(c, fiber.StatusInternalServerError, "could not update key")
+	}
+	return c.JSON(keyJSON(k))
 }
 
 // deleteKey removes an access key.
