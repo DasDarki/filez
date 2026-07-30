@@ -34,6 +34,38 @@ func newShareCmd() *cobra.Command {
 }
 
 func runShare(files []string, host string) error {
+	// A live session takes over all uploads: stream each file instead of
+	// creating links. If it turns out the session ended, fall through to a
+	// normal upload.
+	if m, _ := config.ReadLiveMarker(); m != nil {
+		streamed := 0
+		var viewer string
+		fellThrough := false
+		for _, f := range files {
+			if fi, err := os.Stat(f); err != nil || fi.IsDir() {
+				continue
+			}
+			handled, v, err := pushLiveIfActive(f)
+			if err != nil {
+				_ = desktop.Notify("Filez Live — Fehler", filepath.Base(f)+": "+err.Error())
+				continue
+			}
+			if !handled {
+				fellThrough = true
+				break
+			}
+			streamed++
+			viewer = v
+			okLine("live: " + filepath.Base(f))
+		}
+		if !fellThrough {
+			if streamed > 0 {
+				_ = desktop.Notify(fmt.Sprintf("Filez Live — %d gestreamt", streamed), viewer)
+			}
+			return nil
+		}
+	}
+
 	cfg, err := config.Load()
 	if err != nil {
 		return err

@@ -335,3 +335,27 @@ footer {
 .archive-list .ae-size { color: var(--fg-muted); }
 .center-actions { text-align: center; padding: 40px 20px; }
 .center-actions .ca-icon { font-size: 48px; }
+
+/* Live viewer */
+.live-body { background: #0b0c10; min-height: 100vh; }
+.live-stage { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; }
+.live-img { max-width: 100%; max-height: 100vh; object-fit: contain; border-radius: 6px; }
+.live-status { color: #9598ad; font-size: 16px; font-weight: 500; }
+.live-bar {
+  position: fixed; top: 14px; left: 14px; z-index: 2;
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(0, 0, 0, 0.55); color: #fff;
+  padding: 6px 12px; border-radius: 99px; font-size: 13px; font-weight: 600;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.live-dot {
+  width: 9px; height: 9px; border-radius: 50%; background: #ff3b3b;
+  animation: livepulse 1.6s infinite;
+}
+.live-dot.dead { background: #666; animation: none; }
+.live-name { color: #c9ccda; font-weight: 400; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@keyframes livepulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.6); }
+  70% { box-shadow: 0 0 0 8px rgba(255, 59, 59, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0); }
+}

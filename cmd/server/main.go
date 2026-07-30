@@ -16,6 +16,7 @@ import (
 	"github.com/DasDarki/filez/internal/server/db"
 	"github.com/DasDarki/filez/internal/server/files"
 	"github.com/DasDarki/filez/internal/server/handlers"
+	"github.com/DasDarki/filez/internal/server/live"
 	"github.com/DasDarki/filez/internal/server/storage"
 	"github.com/gofiber/fiber/v3"
 )
@@ -51,6 +52,13 @@ func main() {
 	svc := files.New(database, store, cfg.MaxUploadSize, cleanupAfter)
 	guard := auth.New(cfg, database)
 
+	// Live sessions hold one frame each in memory; cap a single frame to protect memory.
+	liveMax := cfg.MaxUploadSize
+	if liveMax > 64<<20 {
+		liveMax = 64 << 20
+	}
+	liveStore := live.New(liveMax)
+
 	app := fiber.New(fiber.Config{
 		AppName:           "Filez " + version,
 		ServerHeader:      "Filez",
@@ -68,12 +76,12 @@ func main() {
 		},
 	})
 
-	handlers.New(cfg, svc, database, guard, version).Register(app)
+	handlers.New(cfg, svc, database, guard, liveStore, version).Register(app)
 
-	// Background cleanup of expired/limited files.
+	// Background cleanup of expired/limited files and abandoned live sessions.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	go cleanupLoop(ctx, svc)
+	go cleanupLoop(ctx, svc, liveStore)
 
 	logStartup(cfg)
 	if err := app.Listen(":"+strconv.Itoa(cfg.Port), fiber.ListenConfig{
@@ -84,11 +92,22 @@ func main() {
 	}
 }
 
-func cleanupLoop(ctx context.Context, svc *files.Service) {
-	// Run once at startup, then on a ticker.
-	if n, err := svc.CleanupExpired(); err == nil && n > 0 {
-		log.Printf("cleanup: removed %d expired file(s)", n)
+func cleanupLoop(ctx context.Context, svc *files.Service, liveStore *live.Store) {
+	// Abandoned live sessions (no push) are dropped after this long.
+	const liveIdle = 2 * time.Hour
+
+	sweep := func() {
+		if n, err := svc.CleanupExpired(); err != nil {
+			log.Printf("cleanup error: %v", err)
+		} else if n > 0 {
+			log.Printf("cleanup: removed %d expired file(s)", n)
+		}
+		if n := liveStore.Cleanup(time.Now().Add(-liveIdle).Unix()); n > 0 {
+			log.Printf("cleanup: removed %d idle live session(s)", n)
+		}
 	}
+
+	sweep() // once at startup
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 	for {
@@ -96,11 +115,7 @@ func cleanupLoop(ctx context.Context, svc *files.Service) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if n, err := svc.CleanupExpired(); err != nil {
-				log.Printf("cleanup error: %v", err)
-			} else if n > 0 {
-				log.Printf("cleanup: removed %d expired file(s)", n)
-			}
+			sweep()
 		}
 	}
 }

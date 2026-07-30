@@ -64,6 +64,7 @@ func newRootCmd() *cobra.Command {
 	root.AddCommand(newHookCmd())
 	root.AddCommand(newShareCmd())
 	root.AddCommand(newMenuCmd())
+	root.AddCommand(newLiveCmd())
 	return root
 }
 
@@ -87,6 +88,16 @@ func runUpload(path string) error {
 		return fmt.Errorf("file not found: %s", path)
 	} else if fi.IsDir() {
 		return fmt.Errorf("%s is a directory", path)
+	}
+
+	// A live session takes over: stream the file instead of creating a link.
+	if handled, viewer, err := pushLiveIfActive(path); err != nil {
+		return err
+	} else if handled {
+		fmt.Println(ui.Logo())
+		okLine("Streamed to live session")
+		fmt.Println("  " + ui.Label.Render("Viewer: ") + ui.KeyStyle.Render(viewer))
+		return nil
 	}
 
 	cfg, err := config.Load()

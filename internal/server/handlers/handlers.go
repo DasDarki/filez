@@ -10,6 +10,7 @@ import (
 	"github.com/DasDarki/filez/internal/server/config"
 	"github.com/DasDarki/filez/internal/server/db"
 	"github.com/DasDarki/filez/internal/server/files"
+	"github.com/DasDarki/filez/internal/server/live"
 	"github.com/DasDarki/filez/internal/server/web"
 	"github.com/gofiber/fiber/v3"
 )
@@ -20,12 +21,13 @@ type Handlers struct {
 	files   *files.Service
 	db      *db.DB
 	guard   *auth.Guard
+	live    *live.Store
 	version string
 }
 
 // New creates the handler set.
-func New(cfg *config.Config, svc *files.Service, database *db.DB, guard *auth.Guard, version string) *Handlers {
-	return &Handlers{cfg: cfg, files: svc, db: database, guard: guard, version: version}
+func New(cfg *config.Config, svc *files.Service, database *db.DB, guard *auth.Guard, liveStore *live.Store, version string) *Handlers {
+	return &Handlers{cfg: cfg, files: svc, db: database, guard: guard, live: liveStore, version: version}
 }
 
 // Register mounts all routes on app.
@@ -68,6 +70,15 @@ func (h *Handlers) Register(app *fiber.App) {
 	registerLink("/d/:name", h.getDownload)
 	registerLink("/p/:id/:name", h.getPreview)
 	registerLink("/p/:name", h.getPreview)
+
+	// Live sessions: start/push/stop require the access key (like uploads); the
+	// viewer and its frame are public (the session id is the unguessable secret).
+	app.Post("/api/live", gated, h.postLiveStart)
+	app.Put("/api/live/:id", gated, h.putLiveImage)
+	app.Delete("/api/live/:id", gated, h.deleteLive)
+	app.Get("/l/:id", h.getLiveViewer)
+	app.Get("/l/:id/image", h.getLiveImage)
+	app.Get("/l/:id/rev", h.getLiveRev)
 
 	// Admin area (only when an admin password is configured).
 	if h.cfg.AdminEnabled() {

@@ -282,6 +282,17 @@ func processHookFile(cfg *config.Config, hook config.Hook, path string) {
 		return // vanished or never stabilized
 	}
 
+	// A live session takes over: stream the frame instead of uploading.
+	if handled, viewer, err := pushLiveIfActive(path); err != nil {
+		failLine("live push failed: " + err.Error())
+		_ = desktop.Notify("Filez Live — Fehler", filepath.Base(path)+": "+err.Error())
+		return
+	} else if handled {
+		okLine("live: " + filepath.Base(path))
+		_ = desktop.Notify("Filez Live — "+filepath.Base(path), viewer)
+		return
+	}
+
 	host := hook.Host
 	var h *config.Host
 	if host == "" {

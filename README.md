@@ -15,6 +15,7 @@ Upload from a minimalist web UI or straight from your terminal, and share a link
 - **CLI (`filez`)** for scripted uploads and host management, plus **`filezui`**, an animated interactive console UI.
 - **Auto-upload folders:** watch a directory (e.g. your screenshots) — new files upload automatically, the link is copied to your clipboard and a notification pops up.
 - **KDE integration:** a "Share with Filez" right-click menu in Dolphin (Plasma / Wayland).
+- **Live sessions:** stream your uploads to a live, auto-refreshing view (`/l/<id>`) instead of creating links — great for demoing screenshots.
 
 ## Architecture
 
@@ -164,6 +165,24 @@ filez menu uninstall
 `menu install` extracts the embedded Filez icon to `~/.local/share/icons/hicolor/128x128/apps/filez.png`
 and writes an executable service menu to `~/.local/share/kio/servicemenus/filez-share.desktop` (the
 Plasma 6 location). The menu calls `filez share <files>`, which you can also use directly from scripts.
+
+## Live sessions (`filez live`)
+
+Turn your uploads into a live, auto-updating view — open one URL on a screen and every screenshot you
+take appears there instantly, no links to click.
+
+```sh
+filez live          # start a session; prints & copies the viewer URL, e.g. <host>/l/<id>
+# ...take screenshots / run `filez file.png` — each one replaces the live frame...
+filez live          # run again to stop
+```
+
+While a session is active, **every** upload path — `filez <file>`, `filez share`, and the screenshot
+hook — streams the file into the session instead of creating a link or storing it. The server keeps only
+the latest frame in memory (nothing is persisted); the viewer at `/l/<id>` polls and swaps it in live.
+The active session is recorded in `~/.config/filez/.filez_live`, so all `filez` processes (including a
+running `filez hook watch`) pick it up. On a private instance, starting/pushing needs your access key;
+the viewer link is public.
 
 ## Interactive console UI (`filezui`)
 
