@@ -54,7 +54,8 @@ type Store struct {
 }
 
 // New creates a Store. maxFile caps a single file, maxTotal caps a bucket's total
-// bytes, maxFiles caps the number of files per bucket.
+// bytes, maxFiles caps the number of files per bucket. Any cap given as 0 (or
+// negative) means unlimited.
 func New(maxFile, maxTotal int64, maxFiles int) *Store {
 	return &Store{
 		buckets:  make(map[string]*Bucket),
@@ -93,9 +94,9 @@ func (s *Store) Get(code string) (*Bucket, bool) {
 	return b, ok
 }
 
-// Add stores a file in a bucket, enforcing the size and count caps.
+// Add stores a file in a bucket, enforcing the size and count caps (0 = unlimited).
 func (s *Store) Add(code, name, mime string, data []byte) (*File, error) {
-	if int64(len(data)) > s.maxFile {
+	if s.maxFile > 0 && int64(len(data)) > s.maxFile {
 		return nil, ErrTooLarge
 	}
 	s.mu.Lock()
@@ -104,7 +105,10 @@ func (s *Store) Add(code, name, mime string, data []byte) (*File, error) {
 	if b == nil {
 		return nil, ErrNotFound
 	}
-	if len(b.Files) >= s.maxFiles || b.totalSize+int64(len(data)) > s.maxTotal {
+	if s.maxFiles > 0 && len(b.Files) >= s.maxFiles {
+		return nil, ErrFull
+	}
+	if s.maxTotal > 0 && b.totalSize+int64(len(data)) > s.maxTotal {
 		return nil, ErrFull
 	}
 	f := &File{ID: idgen.New(8), Name: name, MIME: mime, Size: int64(len(data)), Data: data, UploadedAt: s.now()}

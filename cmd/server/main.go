@@ -53,13 +53,11 @@ func main() {
 	svc := files.New(database, store, cfg.MaxUploadSize, cleanupAfter)
 	guard := auth.New(cfg, database)
 
-	// Live sessions hold one frame each in memory; cap a single frame to protect memory.
-	liveMax := cfg.MaxUploadSize
-	if liveMax > 64<<20 {
-		liveMax = 64 << 20
-	}
-	liveStore := live.New(liveMax)
-	bucketStore := bucket.New(liveMax, 512<<20, 200) // per-file cap, total bucket cap, max files
+	// Live sessions and sync buckets keep files in memory. They follow the same
+	// per-file limit as normal uploads (MAX_UPLOAD_SIZE); buckets impose no extra
+	// total-size or file-count cap (0 = unlimited). Mind server RAM.
+	liveStore := live.New(cfg.MaxUploadSize)
+	bucketStore := bucket.New(cfg.MaxUploadSize, 0, 0)
 
 	app := fiber.New(fiber.Config{
 		AppName:           "Filez " + version,
