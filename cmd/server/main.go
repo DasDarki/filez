@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/DasDarki/filez/internal/server/auth"
+	"github.com/DasDarki/filez/internal/server/bucket"
 	"github.com/DasDarki/filez/internal/server/config"
 	"github.com/DasDarki/filez/internal/server/db"
 	"github.com/DasDarki/filez/internal/server/files"
@@ -58,6 +59,7 @@ func main() {
 		liveMax = 64 << 20
 	}
 	liveStore := live.New(liveMax)
+	bucketStore := bucket.New(liveMax, 512<<20, 200) // per-file cap, total bucket cap, max files
 
 	app := fiber.New(fiber.Config{
 		AppName:           "Filez " + version,
@@ -76,12 +78,12 @@ func main() {
 		},
 	})
 
-	handlers.New(cfg, svc, database, guard, liveStore, version).Register(app)
+	handlers.New(cfg, svc, database, guard, liveStore, bucketStore, version).Register(app)
 
-	// Background cleanup of expired/limited files and abandoned live sessions.
+	// Background cleanup of expired/limited files, live sessions and sync buckets.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	go cleanupLoop(ctx, svc, liveStore)
+	go cleanupLoop(ctx, svc, liveStore, bucketStore)
 
 	logStartup(cfg)
 	if err := app.Listen(":"+strconv.Itoa(cfg.Port), fiber.ListenConfig{
@@ -92,9 +94,10 @@ func main() {
 	}
 }
 
-func cleanupLoop(ctx context.Context, svc *files.Service, liveStore *live.Store) {
-	// Abandoned live sessions (no push) are dropped after this long.
+func cleanupLoop(ctx context.Context, svc *files.Service, liveStore *live.Store, bucketStore *bucket.Store) {
+	// Abandoned live sessions / sync buckets are dropped after this long idle.
 	const liveIdle = 2 * time.Hour
+	const bucketIdle = time.Hour
 
 	sweep := func() {
 		if n, err := svc.CleanupExpired(); err != nil {
@@ -104,6 +107,9 @@ func cleanupLoop(ctx context.Context, svc *files.Service, liveStore *live.Store)
 		}
 		if n := liveStore.Cleanup(time.Now().Add(-liveIdle).Unix()); n > 0 {
 			log.Printf("cleanup: removed %d idle live session(s)", n)
+		}
+		if n := bucketStore.Cleanup(time.Now().Add(-bucketIdle).Unix()); n > 0 {
+			log.Printf("cleanup: removed %d idle sync bucket(s)", n)
 		}
 	}
 

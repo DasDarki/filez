@@ -65,6 +65,7 @@ func newRootCmd() *cobra.Command {
 	root.AddCommand(newShareCmd())
 	root.AddCommand(newMenuCmd())
 	root.AddCommand(newLiveCmd())
+	root.AddCommand(newSyncCmd())
 	return root
 }
 

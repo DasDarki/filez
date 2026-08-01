@@ -336,6 +336,15 @@ footer {
 .center-actions { text-align: center; padding: 40px 20px; }
 .center-actions .ca-icon { font-size: 48px; }
 
+/* Sync bucket */
+.sync-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sync-code-label { color: var(--fg-muted); font-size: 13px; font-weight: 600; }
+.sync-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 44px; font-weight: 700; letter-spacing: 0.18em; color: var(--accent); line-height: 1.1;
+}
+#files-list { margin-top: 4px; }
+
 /* Live viewer */
 .live-body { background: #0b0c10; min-height: 100vh; }
 .live-stage { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; }

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Filez · Sync</title>
+  <link rel="stylesheet" href="/assets/app.css" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="128x128" href="/assets/favicon.png" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-mark"><span class="logo">F</span> Filez · Sync</div>
+    <div style="display:flex;gap:10px">
+      <a class="icon-btn" href="/" title="Zur Startseite">🏠</a>
+      <button id="theme-toggle" class="icon-btn" title="Theme wechseln">🌙</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="bucket" class="card">
+      <div class="sync-head">
+        <div>
+          <div class="sync-code-label">Sync-Bucket</div>
+          <div id="sync-code" class="sync-code">····</div>
+        </div>
+        <button id="sync-close" class="btn btn-ghost hidden">Bucket schließen</button>
+      </div>
+      <div class="link-box" style="margin-top:14px">
+        <input id="sync-url" type="text" readonly />
+        <button id="sync-copy" class="btn btn-ghost">Kopieren</button>
+      </div>
+      <p class="hint">Jeder mit diesem Link kann Dateien hochladen und herunterladen. Nur temporär im Speicher.</p>
+
+      <div id="dropzone" class="dropzone" style="margin-top:18px">
+        <div class="dz-icon">📤</div>
+        <div class="dz-title">Dateien ablegen</div>
+        <div class="dz-hint">oder klicken zum Durchsuchen · Mehrfachauswahl möglich</div>
+        <input id="file-input" type="file" class="hidden" multiple />
+      </div>
+      <div id="upload-progress" class="progress"><span></span></div>
+      <div id="sync-error" class="alert danger hidden"></div>
+
+      <div class="field">
+        <label id="files-label">Dateien</label>
+        <div id="files-list"></div>
+        <p id="files-empty" class="hint">Noch keine Dateien. Lade die erste hoch!</p>
+      </div>
+    </section>
+
+    <section id="bucket-closed" class="card hidden" style="text-align:center">
+      <div style="font-size:44px">📴</div>
+      <h1>Bucket geschlossen</h1>
+      <p class="subtitle">Dieser Sync-Bucket existiert nicht mehr.</p>
+      <a class="btn btn-ghost" href="/" style="display:inline-flex">Zur Startseite</a>
+    </section>
+  </main>
+
+  <footer id="brand"></footer>
+  <div id="toast" class="toast"></div>
+  <script src="/assets/common.js"></script>
+  <script src="/assets/bucket.js"></script>
+</body>
+</html>

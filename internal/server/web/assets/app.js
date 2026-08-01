@@ -53,8 +53,30 @@
     else showGate();
   }
 
-  function showGate() { $("gate").classList.add("show"); $("app").classList.add("hidden"); }
-  function showApp() { $("gate").classList.remove("show"); $("app").classList.remove("hidden"); setupKeepUI(); }
+  function showGate() { $("gate").classList.add("show"); $("app").classList.add("hidden"); $("sync-card").classList.add("hidden"); }
+  function showApp() {
+    $("gate").classList.remove("show");
+    $("app").classList.remove("hidden");
+    $("sync-card").classList.remove("hidden");
+    setupKeepUI();
+  }
+
+  // ---- Sync bucket ----
+  $("create-sync").addEventListener("click", async () => {
+    const btn = $("create-sync");
+    btn.disabled = true;
+    try {
+      const key = getKey();
+      const r = await fetch("/api/sync", { method: "POST", headers: key ? { "X-Access-Key": key } : {} });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const j = await r.json();
+      localStorage.setItem("filez-sync-owner-" + j.code, j.owner_token);
+      location.href = j.url;
+    } catch (e) {
+      Filez.toast("Konnte Sync-Bucket nicht erstellen");
+      btn.disabled = false;
+    }
+  });
 
   // Show the "keep permanent" checkbox when the current user may create permanent
   // files, otherwise a hint that permanent uploads get cleaned up when idle.

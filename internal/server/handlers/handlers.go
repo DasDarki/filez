@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/DasDarki/filez/internal/server/auth"
+	"github.com/DasDarki/filez/internal/server/bucket"
 	"github.com/DasDarki/filez/internal/server/config"
 	"github.com/DasDarki/filez/internal/server/db"
 	"github.com/DasDarki/filez/internal/server/files"
@@ -22,12 +23,13 @@ type Handlers struct {
 	db      *db.DB
 	guard   *auth.Guard
 	live    *live.Store
+	buckets *bucket.Store
 	version string
 }
 
 // New creates the handler set.
-func New(cfg *config.Config, svc *files.Service, database *db.DB, guard *auth.Guard, liveStore *live.Store, version string) *Handlers {
-	return &Handlers{cfg: cfg, files: svc, db: database, guard: guard, live: liveStore, version: version}
+func New(cfg *config.Config, svc *files.Service, database *db.DB, guard *auth.Guard, liveStore *live.Store, buckets *bucket.Store, version string) *Handlers {
+	return &Handlers{cfg: cfg, files: svc, db: database, guard: guard, live: liveStore, buckets: buckets, version: version}
 }
 
 // Register mounts all routes on app.
@@ -79,6 +81,16 @@ func (h *Handlers) Register(app *fiber.App) {
 	app.Get("/l/:id", h.getLiveViewer)
 	app.Get("/l/:id/image", h.getLiveImage)
 	app.Get("/l/:id/rev", h.getLiveRev)
+
+	// Sync buckets: creating one requires the access key (like uploads); once
+	// created, anyone with the 4-digit code can upload/list/download. Only the
+	// creator (owner token) can close it.
+	app.Post("/api/sync", gated, h.postBucketCreate)
+	app.Get("/s/:code", h.getBucketPage)
+	app.Get("/api/sync/:code", h.getBucketList)
+	app.Post("/api/sync/:code", h.postBucketUpload)
+	app.Get("/api/sync/:code/:fileid", h.getBucketFile)
+	app.Delete("/api/sync/:code", h.deleteBucket)
 
 	// Admin area (only when an admin password is configured).
 	if h.cfg.AdminEnabled() {

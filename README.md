@@ -16,6 +16,7 @@ Upload from a minimalist web UI or straight from your terminal, and share a link
 - **Auto-upload folders:** watch a directory (e.g. your screenshots) — new files upload automatically, the link is copied to your clipboard and a notification pops up.
 - **KDE integration:** a "Share with Filez" right-click menu in Dolphin (Plasma / Wayland).
 - **Live sessions:** stream your uploads to a live, auto-refreshing view (`/l/<id>`) instead of creating links — great for demoing screenshots.
+- **Sync buckets:** a LocalSend-style temporary shared drop with a 4-digit code — anyone with the link uploads/downloads, in memory only.
 
 ## Architecture
 
@@ -183,6 +184,22 @@ the latest frame in memory (nothing is persisted); the viewer at `/l/<id>` polls
 The active session is recorded in `~/.config/filez/.filez_live`, so all `filez` processes (including a
 running `filez hook watch`) pick it up. On a private instance, starting/pushing needs your access key;
 the viewer link is public.
+
+## Sync buckets (`filez sync`)
+
+A temporary, in-memory shared drop — like LocalSend. An authorized user creates a bucket with a short
+**4-digit code**; anyone with the link (`/s/<code>`) can upload, view and download files. Only the
+creator can close it, and everything lives in memory (nothing persisted, auto-expired when idle).
+
+```sh
+filez sync                 # create a bucket; prints & copies the URL, e.g. <host>/s/4821
+filez sync add report.pdf  # optionally push files from the CLI
+filez sync close           # only the creator can close it
+```
+
+You can also create one from the web UI ("🔄 Sync-Bucket" on the start page) and share the code. The
+bucket page has a simple drag & drop uploader and a live-updating file list with download buttons.
+Creating a bucket needs the access key on a private instance; using an existing bucket only needs its code.
 
 ## Interactive console UI (`filezui`)
 
