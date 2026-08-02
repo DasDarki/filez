@@ -194,6 +194,8 @@ creator can close it, and everything lives in memory (nothing persisted, auto-ex
 ```sh
 filez sync                 # create a bucket; prints & copies the URL, e.g. <host>/s/4821
 filez sync add report.pdf  # optionally push files from the CLI
+filez sync download        # download all files into the current folder (your local bucket)
+filez sync download 4821   # ...or from a specific bucket by code (--host to pick the host)
 filez sync close           # only the creator can close it
 ```
 

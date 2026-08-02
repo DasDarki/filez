@@ -36,6 +36,26 @@ func newSyncCmd() *cobra.Command {
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error { return runSyncAdd(args) },
 	})
+
+	var dlHost string
+	dl := &cobra.Command{
+		Use:     "download [code]",
+		Aliases: []string{"dl"},
+		Short:   "Download all files from a bucket into the current folder",
+		Long: "Download every file of a sync bucket into the current directory. Pass a code\n" +
+			"to download that bucket, or omit it to use the bucket you created locally.",
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			code := ""
+			if len(args) > 0 {
+				code = args[0]
+			}
+			return runSyncDownload(code, dlHost)
+		},
+	}
+	dl.Flags().StringVarP(&dlHost, "host", "H", "", "host to download from (when passing a code)")
+	dl.Flags().SetNormalizeFunc(normalizeFlags)
+	sync.AddCommand(dl)
 	return sync
 }
 
@@ -82,6 +102,81 @@ func runSyncClose() error {
 	}
 	okLine("Sync bucket " + m.Code + " closed")
 	return nil
+}
+
+func runSyncDownload(code, host string) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+
+	var baseURL, bucketCode string
+	if code != "" {
+		h, err := liveHost(cfg, host)
+		if err != nil {
+			return err
+		}
+		baseURL, bucketCode = h.URL, code
+	} else {
+		m, _ := config.ReadSyncMarker()
+		if m == nil {
+			return fmt.Errorf("no local sync bucket — pass a code: filez sync download <code>")
+		}
+		baseURL, bucketCode = m.URL, m.Code
+	}
+
+	client := api.New(baseURL, "")
+	files, err := client.SyncList(bucketCode)
+	if err != nil {
+		return err
+	}
+	if len(files) == 0 {
+		info("Bucket " + bucketCode + " is empty.")
+		return nil
+	}
+
+	cwd, _ := os.Getwd()
+	fmt.Println(ui.Logo())
+	info(fmt.Sprintf("Downloading %d file(s) from bucket %s into %s", len(files), bucketCode, cwd))
+
+	downloaded := 0
+	for _, f := range files {
+		dest := uniqueLocalPath(safeName(f.Name, f.ID))
+		n, err := client.SyncDownload(bucketCode, f.ID, dest)
+		if err != nil {
+			failLine(f.Name + ": " + err.Error())
+			continue
+		}
+		okLine("↓ " + filepath.Base(dest) + "  " + ui.Subtle.Render(ui.HumanBytes(n)))
+		downloaded++
+	}
+	okLine(fmt.Sprintf("Done — %d/%d file(s) downloaded", downloaded, len(files)))
+	return nil
+}
+
+// safeName strips any path components so a bucket file can only land in the
+// current directory (never escape it).
+func safeName(name, fallback string) string {
+	base := filepath.Base(filepath.FromSlash(name))
+	if base == "" || base == "." || base == ".." || base == string(filepath.Separator) {
+		return fallback
+	}
+	return base
+}
+
+// uniqueLocalPath avoids overwriting an existing local file by adding a suffix.
+func uniqueLocalPath(name string) string {
+	if _, err := os.Stat(name); os.IsNotExist(err) {
+		return name
+	}
+	ext := filepath.Ext(name)
+	base := name[:len(name)-len(ext)]
+	for i := 1; ; i++ {
+		candidate := fmt.Sprintf("%s (%d)%s", base, i, ext)
+		if _, err := os.Stat(candidate); os.IsNotExist(err) {
+			return candidate
+		}
+	}
 }
 
 func runSyncAdd(files []string) error {

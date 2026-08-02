@@ -45,6 +45,59 @@ func (c *Client) SyncCreate() (*SyncBucket, error) {
 	return &b, nil
 }
 
+// SyncFile is one file listed in a bucket.
+type SyncFile struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Size int64  `json:"size"`
+	MIME string `json:"mime"`
+}
+
+// SyncList returns the files currently in a bucket.
+func (c *Client) SyncList(code string) ([]SyncFile, error) {
+	req, _ := http.NewRequest(http.MethodGet, c.BaseURL+"/api/sync/"+code, nil)
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("could not read bucket (status %d)", resp.StatusCode)
+	}
+	var out struct {
+		Alive bool       `json:"alive"`
+		Files []SyncFile `json:"files"`
+	}
+	if err := json.Unmarshal(body, &out); err != nil {
+		return nil, fmt.Errorf("invalid server response")
+	}
+	if !out.Alive {
+		return nil, fmt.Errorf("sync bucket %s is closed or unknown", code)
+	}
+	return out.Files, nil
+}
+
+// SyncDownload downloads one file from a bucket to dest.
+func (c *Client) SyncDownload(code, fileID, dest string) (int64, error) {
+	req, _ := http.NewRequest(http.MethodGet, c.BaseURL+"/api/sync/"+code+"/"+fileID, nil)
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("download failed (status %d)", resp.StatusCode)
+	}
+	f, err := os.Create(dest)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+	return io.Copy(f, resp.Body)
+}
+
 // SyncClose closes a sync bucket using its owner token.
 func (c *Client) SyncClose(code, ownerToken string) error {
 	req, _ := http.NewRequest(http.MethodDelete, c.BaseURL+"/api/sync/"+code, nil)
