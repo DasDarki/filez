@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -11,6 +12,9 @@ import (
 	"path/filepath"
 	"time"
 )
+
+// ErrBucketGone means the sync bucket no longer exists (closed or expired).
+var ErrBucketGone = errors.New("closed or unknown")
 
 // SyncBucket is the /api/sync create response.
 type SyncBucket struct {
@@ -74,7 +78,7 @@ func (c *Client) SyncList(code string) ([]SyncFile, error) {
 		return nil, fmt.Errorf("invalid server response")
 	}
 	if !out.Alive {
-		return nil, fmt.Errorf("sync bucket %s is closed or unknown", code)
+		return nil, fmt.Errorf("sync bucket %s is %w", code, ErrBucketGone)
 	}
 	return out.Files, nil
 }

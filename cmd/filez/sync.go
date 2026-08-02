@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -60,6 +61,19 @@ func newSyncCmd() *cobra.Command {
 }
 
 func runSyncCreate(host string) error {
+	// Refuse to open a second bucket while one is still open locally.
+	if m, _ := config.ReadSyncMarker(); m != nil {
+		_, err := api.New(m.URL, "").SyncList(m.Code)
+		switch {
+		case err == nil:
+			return fmt.Errorf("a sync bucket is already open (%s) — close it first with 'filez sync close'", m.Code)
+		case errors.Is(err, api.ErrBucketGone):
+			_ = config.RemoveSyncMarker() // stale marker: the bucket expired or was closed elsewhere
+		default:
+			return fmt.Errorf("couldn't verify your open bucket on %s (%v) — close it with 'filez sync close' if it's gone", m.Host, err)
+		}
+	}
+
 	cfg, err := config.Load()
 	if err != nil {
 		return err
