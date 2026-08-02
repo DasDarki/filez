@@ -133,6 +133,23 @@ func (s *Store) List(code string) ([]File, bool) {
 	return out, true
 }
 
+// Snapshot returns all files (including their bytes) for zipping. The Data
+// slices are shared, not copied — they are immutable once added, so streaming
+// from the snapshot is safe even if the bucket is closed meanwhile.
+func (s *Store) Snapshot(code string) ([]File, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	b := s.buckets[code]
+	if b == nil {
+		return nil, false
+	}
+	out := make([]File, 0, len(b.Files))
+	for _, f := range b.Files {
+		out = append(out, *f)
+	}
+	return out, true
+}
+
 // FileData returns a file's bytes.
 func (s *Store) FileData(code, fileID string) (data []byte, mime, name string, ok bool) {
 	s.mu.RLock()

@@ -198,7 +198,8 @@ filez sync close           # only the creator can close it
 ```
 
 You can also create one from the web UI ("🔄 Sync-Bucket" on the start page) and share the code. The
-bucket page has a simple drag & drop uploader and a live-updating file list with download buttons.
+bucket page has a simple drag & drop uploader and a live-updating file list with per-file download
+buttons plus a "download all as ZIP".
 Creating a bucket needs the access key on a private instance; using an existing bucket only needs its code.
 
 ## Interactive console UI (`filezui`)

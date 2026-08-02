@@ -89,6 +89,7 @@ func (h *Handlers) Register(app *fiber.App) {
 	app.Get("/s/:code", h.getBucketPage)
 	app.Get("/api/sync/:code", h.getBucketList)
 	app.Post("/api/sync/:code", h.postBucketUpload)
+	app.Get("/api/sync/:code/zip", h.getBucketZip)
 	app.Get("/api/sync/:code/:fileid", h.getBucketFile)
 	app.Delete("/api/sync/:code", h.deleteBucket)
 

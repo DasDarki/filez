@@ -33,6 +33,13 @@
     const list = $("files-list");
     $("files-empty").classList.toggle("hidden", files.length > 0);
     $("files-label").textContent = "Dateien" + (files.length ? " (" + files.length + ")" : "");
+    const dl = $("download-all");
+    if (files.length > 1) {
+      dl.href = "/api/sync/" + code + "/zip";
+      dl.classList.remove("hidden");
+    } else {
+      dl.classList.add("hidden");
+    }
     list.innerHTML = "";
     for (const f of files) {
       const ext = f.name.includes(".") ? f.name.split(".").pop() : "";

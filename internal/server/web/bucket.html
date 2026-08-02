@@ -42,7 +42,10 @@
       <div id="sync-error" class="alert danger hidden"></div>
 
       <div class="field">
-        <label id="files-label">Dateien</label>
+        <div class="files-head">
+          <label id="files-label" style="margin:0">Dateien</label>
+          <a id="download-all" class="btn btn-ghost hidden" download>⬇ Alle als ZIP</a>
+        </div>
         <div id="files-list"></div>
         <p id="files-empty" class="hint">Noch keine Dateien. Lade die erste hoch!</p>
       </div>
