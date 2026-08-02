@@ -44,7 +44,10 @@
       <div class="field">
         <div class="files-head">
           <label id="files-label" style="margin:0">Dateien</label>
-          <a id="download-all" class="btn btn-ghost hidden" download>⬇ Alle als ZIP</a>
+          <div class="files-actions">
+            <button id="download-each" class="btn btn-ghost hidden">⬇ Einzeln</button>
+            <a id="download-all" class="btn btn-ghost hidden" download>⬇ Alle als ZIP</a>
+          </div>
         </div>
         <div id="files-list"></div>
         <p id="files-empty" class="hint">Noch keine Dateien. Lade die erste hoch!</p>

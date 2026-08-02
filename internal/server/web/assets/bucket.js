@@ -7,6 +7,7 @@
   const code = (location.pathname.split("/").filter(Boolean)[1] || "").trim();
   const ownerToken = localStorage.getItem("filez-sync-owner-" + code) || "";
   let timer = null;
+  let currentFiles = [];
 
   $("sync-code").textContent = code;
   $("sync-url").value = location.href;
@@ -30,16 +31,15 @@
   }
 
   function render(files) {
+    currentFiles = files;
     const list = $("files-list");
     $("files-empty").classList.toggle("hidden", files.length > 0);
     $("files-label").textContent = "Dateien" + (files.length ? " (" + files.length + ")" : "");
+    const many = files.length > 1;
     const dl = $("download-all");
-    if (files.length > 1) {
-      dl.href = "/api/sync/" + code + "/zip";
-      dl.classList.remove("hidden");
-    } else {
-      dl.classList.add("hidden");
-    }
+    dl.href = "/api/sync/" + code + "/zip";
+    dl.classList.toggle("hidden", !many);
+    $("download-each").classList.toggle("hidden", !many);
     list.innerHTML = "";
     for (const f of files) {
       const ext = f.name.includes(".") ? f.name.split(".").pop() : "";
@@ -140,6 +140,24 @@
     } catch (e) {
       Filez.toast("Schließen fehlgeschlagen");
     }
+  });
+
+  // Download each file as its own download, one after another. Browsers may ask
+  // once to allow multiple downloads.
+  $("download-each").addEventListener("click", async () => {
+    const btn = $("download-each");
+    btn.disabled = true;
+    for (const f of currentFiles.slice()) {
+      const a = document.createElement("a");
+      a.href = "/api/sync/" + code + "/" + f.id;
+      a.download = f.name || f.id;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      await new Promise((r) => setTimeout(r, 400));
+    }
+    btn.disabled = false;
+    Filez.toast("Downloads gestartet");
   });
 
   loadFiles();
