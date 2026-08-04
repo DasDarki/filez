@@ -17,6 +17,7 @@ Upload from a minimalist web UI or straight from your terminal, and share a link
 - **KDE integration:** a "Share with Filez" right-click menu in Dolphin (Plasma / Wayland).
 - **Live sessions:** stream your uploads to a live, auto-refreshing view (`/l/<id>`) instead of creating links — great for demoing screenshots.
 - **Sync buckets:** a LocalSend-style temporary shared drop with a 4-digit code — anyone with the link uploads/downloads, in memory only.
+- **Paste editor:** a hastebin at `/h` — write text/code, save with a button or Ctrl/Cmd+S, and the paste opens as a preview.
 
 ## Architecture
 

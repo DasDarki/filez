@@ -10,7 +10,7 @@ import (
 	"io"
 )
 
-//go:embed index.html admin.html preview.html live.html bucket.html assets
+//go:embed index.html admin.html preview.html live.html bucket.html haste.html assets
 var Assets embed.FS
 
 // Brand is the footer credit shown across the UI.

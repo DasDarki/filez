@@ -41,8 +41,9 @@ func (h *Handlers) Register(app *fiber.App) {
 	// Static frontend assets (embedded).
 	app.Get("/assets/*", h.getAsset)
 
-	// Index page (renders the gate itself when non-public).
+	// Index page (renders the gate itself when non-public) and the paste editor.
 	app.Get("/", h.getIndex)
+	app.Get("/h", h.getHastePage)
 
 	// Instance-gated routes. In Fiber the handler chain runs left-to-right, so
 	// the auth middleware MUST come before the actual handler.
@@ -284,6 +285,11 @@ func (h *Handlers) getAsset(c fiber.Ctx) error {
 // getIndex serves the index page.
 func (h *Handlers) getIndex(c fiber.Ctx) error {
 	return c.SendFile("index.html", fiber.SendFile{FS: web.Assets})
+}
+
+// getHastePage serves the paste (hastebin) editor.
+func (h *Handlers) getHastePage(c fiber.Ctx) error {
+	return c.SendFile("haste.html", fiber.SendFile{FS: web.Assets})
 }
 
 // getAdminPage serves the admin page.

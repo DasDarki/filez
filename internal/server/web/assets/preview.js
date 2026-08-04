@@ -92,15 +92,45 @@
   }
 
   async function renderText(v) {
+    if (cfg.size > 5 * 1024 * 1024) {
+      renderDownload(v, "Textdatei zu groß für die Vorschau (>5 MB).");
+      return;
+    }
+    v.innerHTML = '<div class="code-loading">Lade…</div>';
     try {
       const r = await fetch(downloadURL(), { headers: fetchHeaders() });
-      if (r.status === 401) return onAuthFail();
+      if (r.status === 401 && cfg.hasPw) return onAuthFail();
       if (!r.ok) throw new Error("HTTP " + r.status);
       const text = await r.text();
-      const pre = document.createElement("pre");
-      pre.textContent = text;
-      v.appendChild(pre);
-    } catch (e) { fail(v); }
+      v.innerHTML = "";
+      buildCodeView(v, text);
+    } catch (e) {
+      fail(v);
+    }
+  }
+
+  function buildCodeView(v, text) {
+    const wrap = document.createElement("div");
+    wrap.className = "code-view";
+    const lines = text.split("\n");
+    // Drop a trailing empty line from the final newline so numbering matches.
+    if (lines.length > 1 && lines[lines.length - 1] === "") lines.pop();
+
+    const gutter = document.createElement("div");
+    gutter.className = "code-gutter";
+    gutter.setAttribute("aria-hidden", "true");
+    gutter.textContent = lines.map((_, i) => i + 1).join("\n");
+
+    const pre = document.createElement("pre");
+    pre.className = "code-body";
+    pre.textContent = lines.join("\n");
+
+    // Keep the gutter aligned while scrolling the code body vertically.
+    pre.addEventListener("scroll", () => { gutter.scrollTop = pre.scrollTop; });
+
+    wrap.appendChild(gutter);
+    wrap.appendChild(pre);
+    v.appendChild(wrap);
   }
 
   function renderArchive(v) {

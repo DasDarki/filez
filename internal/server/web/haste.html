@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Filez · Paste</title>
+  <link rel="stylesheet" href="/assets/app.css" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="128x128" href="/assets/favicon.png" />
+</head>
+<body>
+  <header class="topbar" style="max-width:1100px">
+    <div class="brand-mark"><span class="logo">F</span> Filez · Paste</div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <input id="haste-name" class="haste-name" type="text" placeholder="paste.txt" title="Dateiname / Endung bestimmt die Vorschau" />
+      <a class="icon-btn" href="/" title="Zur Startseite">🏠</a>
+      <button id="theme-toggle" class="icon-btn" title="Theme wechseln">🌙</button>
+      <button id="haste-save" class="btn btn-primary" style="padding:9px 16px">Speichern <span class="haste-kbd">Strg+S</span></button>
+    </div>
+  </header>
+
+  <main class="haste-main">
+    <textarea id="haste-text" class="haste-text" spellcheck="false" autofocus
+      placeholder="Text oder Code hier einfügen…  ·  Strg/Cmd+S zum Speichern"></textarea>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script src="/assets/common.js"></script>
+  <script src="/assets/haste.js"></script>
+</body>
+</html>
