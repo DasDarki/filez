@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/DasDarki/filez/internal/server/web"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -67,7 +66,7 @@ func (h *Handlers) deleteLive(c fiber.Ctx) error {
 
 // getLiveViewer serves the auto-refreshing viewer page.
 func (h *Handlers) getLiveViewer(c fiber.Ctx) error {
-	return c.SendFile("live.html", fiber.SendFile{FS: web.Assets})
+	return h.serveEmbedded(c, "live.html")
 }
 
 // getLiveImage serves the current frame's bytes.

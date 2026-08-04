@@ -2,9 +2,13 @@
 package handlers
 
 import (
+	"fmt"
+	"mime"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/DasDarki/filez/internal/server/auth"
 	"github.com/DasDarki/filez/internal/server/bucket"
@@ -18,18 +22,22 @@ import (
 
 // Handlers bundles the dependencies shared by all route handlers.
 type Handlers struct {
-	cfg     *config.Config
-	files   *files.Service
-	db      *db.DB
-	guard   *auth.Guard
-	live    *live.Store
-	buckets *bucket.Store
-	version string
+	cfg      *config.Config
+	files    *files.Service
+	db       *db.DB
+	guard    *auth.Guard
+	live     *live.Store
+	buckets  *bucket.Store
+	version  string
+	assetTag string // ETag for embedded assets; changes each server start (deploy)
 }
 
 // New creates the handler set.
 func New(cfg *config.Config, svc *files.Service, database *db.DB, guard *auth.Guard, liveStore *live.Store, buckets *bucket.Store, version string) *Handlers {
-	return &Handlers{cfg: cfg, files: svc, db: database, guard: guard, live: liveStore, buckets: buckets, version: version}
+	return &Handlers{
+		cfg: cfg, files: svc, db: database, guard: guard, live: liveStore, buckets: buckets, version: version,
+		assetTag: fmt.Sprintf(`"filez-%s-%d"`, version, time.Now().Unix()),
+	}
 }
 
 // Register mounts all routes on app.
@@ -276,23 +284,60 @@ func jsonErr(c fiber.Ctx, code int, msg string) error {
 	return c.Status(code).JSON(fiber.Map{"error": msg})
 }
 
+var assetTypes = map[string]string{
+	".html":  "text/html; charset=utf-8",
+	".css":   "text/css; charset=utf-8",
+	".js":    "text/javascript; charset=utf-8",
+	".json":  "application/json",
+	".svg":   "image/svg+xml",
+	".png":   "image/png",
+	".ico":   "image/x-icon",
+	".woff2": "font/woff2",
+	".woff":  "font/woff",
+	".ttf":   "font/ttf",
+}
+
+// serveEmbedded serves a file from the embedded FS with a per-build ETag and
+// revalidation, so browsers pick up new assets after a redeploy instead of
+// serving a stale cache (embedded files carry a zero modtime, which otherwise
+// causes false 304s).
+func (h *Handlers) serveEmbedded(c fiber.Ctx, path string) error {
+	data, err := web.Assets.ReadFile(path)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).SendString("not found")
+	}
+	ext := strings.ToLower(filepath.Ext(path))
+	ctype := assetTypes[ext]
+	if ctype == "" {
+		if ctype = mime.TypeByExtension(ext); ctype == "" {
+			ctype = "application/octet-stream"
+		}
+	}
+	c.Set("Content-Type", ctype)
+	c.Set("Cache-Control", "no-cache")
+	c.Set("ETag", h.assetTag)
+	if c.Get("If-None-Match") == h.assetTag {
+		return c.SendStatus(fiber.StatusNotModified)
+	}
+	return c.Send(data)
+}
+
 // getAsset serves an embedded static asset.
 func (h *Handlers) getAsset(c fiber.Ctx) error {
-	p := "assets/" + c.Params("*")
-	return c.SendFile(p, fiber.SendFile{FS: web.Assets})
+	return h.serveEmbedded(c, "assets/"+c.Params("*"))
 }
 
 // getIndex serves the index page.
 func (h *Handlers) getIndex(c fiber.Ctx) error {
-	return c.SendFile("index.html", fiber.SendFile{FS: web.Assets})
+	return h.serveEmbedded(c, "index.html")
 }
 
 // getHastePage serves the paste (hastebin) editor.
 func (h *Handlers) getHastePage(c fiber.Ctx) error {
-	return c.SendFile("haste.html", fiber.SendFile{FS: web.Assets})
+	return h.serveEmbedded(c, "haste.html")
 }
 
 // getAdminPage serves the admin page.
 func (h *Handlers) getAdminPage(c fiber.Ctx) error {
-	return c.SendFile("admin.html", fiber.SendFile{FS: web.Assets})
+	return h.serveEmbedded(c, "admin.html")
 }

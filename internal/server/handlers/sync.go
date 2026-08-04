@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/DasDarki/filez/internal/server/bucket"
-	"github.com/DasDarki/filez/internal/server/web"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -29,7 +28,7 @@ func (h *Handlers) postBucketCreate(c fiber.Ctx) error {
 
 // getBucketPage serves the shared bucket UI.
 func (h *Handlers) getBucketPage(c fiber.Ctx) error {
-	return c.SendFile("bucket.html", fiber.SendFile{FS: web.Assets})
+	return h.serveEmbedded(c, "bucket.html")
 }
 
 // getBucketList returns the files currently in a bucket.
